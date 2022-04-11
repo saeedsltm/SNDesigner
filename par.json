@@ -1,0 +1,7 @@
+{
+    "eventsFile" : "events/events.dat",
+    "stationFile": "events/STATION0.HYP",
+    "velocityFile": "events/STATION0.HYP",
+    "velocityGridIntervals": [1.0, 1.0, 1.0],
+    "decimationFactor": 1
+}

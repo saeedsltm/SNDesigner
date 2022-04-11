@@ -1,0 +1,198 @@
+ Input File: events.dat                              
+
+ 
+ Reset test(  2)=  500.0000
+ Reset test(  7)=   -3.0000
+ Reset test(  8)=    2.6000
+ Reset test(  9)=    0.0010
+ Reset test( 11)=   99.0000
+ Reset test( 13)=    5.0000
+ Reset test( 34)=    1.5000
+ Reset test( 35)=    2.5000
+ Reset test( 36)=    0.0000
+ Reset test( 41)=20000.0000
+ Reset test( 43)=    5.0000
+ Reset test( 51)=    3.6000
+ Reset test( 50)=    1.0000
+ Reset test( 56)=    1.0000
+ Reset test( 58)=99990.0000
+ Reset test( 40)=    0.0000
+ Reset test( 60)=    0.0000
+ Reset test( 71)=    1.0000
+ Reset test( 75)=    1.0000
+ Reset test( 76)=    0.9100
+ Reset test( 77)=    0.0009
+ Reset test( 78)=   -1.6700
+ Reset test( 79)=    1.0000
+ Reset test( 80)=    3.0000
+ Reset test( 81)=    1.0000
+ Reset test( 82)=    1.0000
+ Reset test( 83)=    1.0000
+ Reset test( 88)=    1.0000
+ Reset test( 85)=    0.1000
+ Reset test( 91)=    0.1000
+    
+ AFJ  3551.300N 5142.720E 2750  0.00 0.00
+ ANJ  3528.080N 5354.900E 1845  0.00 0.00
+ DMV  3534.620N 52 1.920E 2546  0.00 0.00
+ FIR  3538.520N 5245.240E 2380  0.00 0.00
+ GLO  3630.120N 5349.860E 1950  0.00 0.00
+ HSB  3526.280N 5116.560E 1138  0.00 0.00
+ LAS  3522.860N 5257.540E 1452  0.00 0.00
+ MZPU 3626.400N 5134.140E 2023  0.00 0.00
+ PRN  3614.520N 5220.280E 1333  0.00 0.00
+ RAZ  3524.300N 4955.740E 1950  0.00 0.00
+ SFB  3421.120N 5214.460E  995  0.00 0.00
+ TEH  3545.120N 5123.340E 1458  0.00 0.00
+ VRN  3459.700N 5143.620E 1139  0.00 0.00
+
+     --------- HYPOCENTER Version 4.0  1998 -----------
+
+
+
+ Maximum elev. station: AFJ     3551.30N  5142.72E   elevation =  2750 m
+
+
+ Trial depth = 15.00  Vp/Vs =  1.73
+
+ Velocity Model
+
+ Depth, km   Vp, km/s   Vs, km/s
+      0.00       5.40       3.12    
+      6.00       5.90       3.41    
+     14.00       6.30       3.64    
+     18.00       6.50       3.76    
+     46.00       8.05       4.65   N
+     80.00       8.10       4.68    
+
+ EVENT #      1
+
+ 2022 0310 0258 31.4 L  35.975  52.895  8.5  Teh 52 0.3 4.1LTeh                1
+
+   First arrival: FIR  2022  310    2 58 38.60
+
+ Starting location depth =    15.0 km
+Starting location   10.0 km from closest station and rms    35.73   52.86    3.00
+Starting location   10.0 km from closest station and rms    35.55   52.86    4.86
+Starting location   10.0 km from closest station and rms    35.73   52.64    3.75
+Starting location   10.0 km from closest station and rms    35.55   52.64    5.14
+Starting location   50.0 km from closest station and rms    36.09   53.31    4.74
+Starting location   50.0 km from closest station and rms    35.19   53.31    9.83
+Starting location   50.0 km from closest station and rms    36.09   52.20    9.13
+Starting location   50.0 km from closest station and rms    35.19   52.20   10.39
+Starting location  150.0 km from closest station and rms    36.99   54.41   12.61
+Starting location  150.0 km from closest station and rms    34.29   54.41   17.76
+Starting location  150.0 km from closest station and rms    36.99   51.10   17.93
+Starting location  150.0 km from closest station and rms    34.29   51.10   19.40
+
+ maximum multi-station phase: Pg        10
+
+
+   5 multiple-phase stations
+
+        FIR   PG-SG        42.2 km
+        PRN   PG-SG        55.5 km
+        DMV   PG-SG        85.1 km
+        ANJ   PG-SG        98.4 km
+        MZPU  PG-SG       124.3 km
+
+ Starting location from 2 distances:   35.82   52.88
+ rms =     0.58
+ Starting location from 2 distances:   35.56   52.30
+ rms =     7.34
+
+ iter   origin      lat      long depth  no  m    rms   damp.  erlg  erlt  erdp
+         (sec)  (dg mn)   (dg mn)  (km)         (sec)          (km)  (km)  (km)
+    1    31.37 36 0.44N  5252.93E  15.0  16  2   0.58   0.005   0.0   0.0   0.0
+    2    31.46 3558.51N  5253.89E  15.0  16  2   0.30   0.005   3.2   3.2   0.0
+    2    31.46 3558.52N  5253.88E  15.0  16  2   0.30   0.005   1.7   1.7   0.0
+ depth freed: icd=   3
+    3    30.93 3558.56N  5253.95E  10.0  16  3   0.36   0.010   2.0   2.0   7.5
+    4    30.88 3559.06N  5253.93E   9.6  16  3   0.34   0.007   2.2   2.1   7.3
+    5    30.89 3559.07N  5253.93E   9.4  16  3   0.34   0.005   2.1   2.1   7.1
+    6    30.89 3559.07N  5253.94E   9.4  16  3   0.34   0.005   2.1   2.0   7.1
+
+   date hrmn   sec      lat      long depth   no m    rms  damp erln erlt erdp ic
+ 22 310  258 31.46 3558.52N  52 53.9E  15.0   16 3   0.30 0.000  1.9  1.8  6.5  3
+
+ Origin time error:       0.84
+
+ DRMS Values: d=    5.00 km
+
+ DRMS:       lon+d     lon-d     lat+d     lat-d   depth+d   depth-d
+  DRMS pos    0.45      0.45      0.33      0.34      0.21      0.06
+
+ Resolution matrix: k =      0.005
+
+                             Long     Lat   Depth
+                     Long   0.994  -0.002   0.001
+                      Lat  -0.002   0.995   0.000
+                    Depth   0.001   0.000   0.995
+
+ Azimuthal Gap in Station Coverage 114 degrees
+  
+     
+ stn   dist   azm  ain w phas    calcphs hrmn tsec  t-obs  t-cal    res   wt di
+ FIR     39 199.4 98.9 0 Pg  0   PG       258 38.6   7.14   7.51  -0.37 1.00  2
+ FIR     39 199.4 98.9 0 Sg  0   SG       258 44.3  12.84  13.00  -0.15 1.00 11
+ PRN     58 300.6      0     0            258 50.3   18.8
+ PRN     58 300.6 92.3 0 Pg  0   PG       258 41.6  10.14  10.46  -0.32 1.00  3
+ PRN     58 300.6 92.3 0 Sg  0   SG       258 49.1  17.64  18.10  -0.45 1.00  7
+ LAS     66 175.2      0     0            258 52.2   20.7
+ LAS     66 175.2 91.8 0 Pg  0   PG       258 43.3  11.84  11.69   0.15 1.00  2
+ DMV     90 240.8      0     0            258 59.5   28.0
+ DMV     90 240.8 91.1 0 Pg  0   PG       258 46.8  15.34  15.56  -0.22 1.00  1
+ DMV     90 240.8 91.1 0 Sg  0   SG       258 58.3  26.84  26.93  -0.08 1.00  6
+ GLO    102  54.9      0     0            259  9.3   37.9
+ GLO    102  54.9 90.8 0 Pg  0   PG       258 49.2  17.74  17.46   0.28 1.00 12
+ ANJ    108 121.2      0     0            259 11.9   40.4
+ ANJ    108 121.2 90.8 0 Pg  0   PG       258 49.7  18.24  18.35  -0.10 1.00  5
+ ANJ    108 121.2 90.8 0 Sg  0   SG       259  3.0  31.54  31.74  -0.20 1.00 11
+ MZPU   130 293.7      0     0            259 20.2   48.7
+ MZPU   130 293.7 90.6 0 Pg  0   PG       258 53.1  21.64  21.90  -0.26 1.00  2
+ MZPU   130 293.7 90.6 0 Sg  0   SG       259  9.9  38.44  37.89   0.55 1.00  6
+ TEH    139 260.1      0     0            259 27.5   56.0
+ TEH    139 260.1 90.5 0 Pg  0   PG       258 54.7  23.24  23.18   0.07 1.00  1
+ VRN    152 224.7      0     0            259 20.4   48.9
+ VRN    152 224.7 90.5 0 Pg  0   PG       258 57.2  25.74  25.29   0.45 1.00  1
+ HSB    158 248.4      0     0            259  0.1   28.6
+ HSB    158 248.4 90.5 0 Pg  0   PG       258 58.0  26.54  26.30   0.24 1.00  1
+ SFB    190 198.6      0     0            259 31.5   60.0
+ SFB    190 198.6 51.5 0 Pn  0   PN5      259  3.1  31.64  31.23   0.41 1.00 29
+      
+
+ Difference from previous solution:
+
+ dorigin=     0.1 sec dx=     0.3 km dy=     0.0 km dz=     6.5 km drms=  0.00
+
+ unweighted rms =     0.30
+
+-----------------------------------------------------------------------------
+
+
+ average differences from previous solutions:        1 events
+
+                            mean         rms
+
+ origin time:               0.1 sec       0.0
+ longitude:                 0.3 km        0.0
+ latitude:                  0.0 km        0.0
+ depth:                     6.5 km        0.0
+
+
+ average station residuals (weighted):
+
+ station     p residual rms dev  no p     s residual rms dev  no s
+ ANJ              -0.10    0.00     1          -0.20    0.00     1
+ DMV              -0.22    0.00     1          -0.08    0.00     1
+ FIR              -0.37    0.00     1          -0.15    0.00     1
+ GLO               0.28    0.00     1
+ HSB               0.24    0.00     1
+ LAS               0.15    0.00     1
+ MZPU             -0.26    0.00     1           0.55    0.00     1
+ PRN              -0.32    0.00     1          -0.45    0.00     1
+ SFB               0.41    0.00     1
+ TEH               0.07    0.00     1
+ VRN               0.45    0.00     1
+
+ Mean rms value (   1 events) =        0.304

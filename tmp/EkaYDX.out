@@ -1,0 +1,82 @@
+ *** Hypoellipse: Unix/Non-Xpick/Y2K version 3.9 2/11/2000  ***
+  Configured for up to 2600 stations in station list
+  and up to 1501 records per earthquake.
+  Run on 01/01/01 at 19:50
+ jump default.cfg                                                                                              
+ begin station list +1 19800101                                                  
+ jump to EkaYDX.pha                                        
+                                              ----------------------------------------------------------------
+                                              ----------------------------------------------------------------
+                                              ----------------------------------------------------------------
+ 22/03/10    02:58      earthquake location                                        
+         -az/dp--step---se =az/dp==step===se -az/dp--step---se
+         298/ 0 .0004 .426  28/ 6 .0037 .564 208/84 .0205 1.63                                                                       
+
+ horizontal and vertical single variable standard deviations (68% - one degree of freedom; max 99 km)
+       seh =    .23             seh =    .31             sez =    .87   quality = a
+       az  =   -62.             az  =    28.
+
+ se of orig =    .04; # of iterations =   4; dmax =     300.00; sequence number =      
+ event type = " "; processing status = " "
+ s minus p interval for closest station =       5.32
+
+    date    origin      lat      long    depth    mag no d1 gap d  rms    avwt   se
+ 19220310  258 31.17 35n58.38  52e53.59  16.52        16 39 114 1  .0880  1.00   .10
+
+    seh  sez q sqd  adj in nr   avr  aar nm avxm mdxm sdxm nf avfm mdfm sdfm   vpvs
+     .3   .9 b a c  .15 10 16 .0000 .068  0             .0  0             .0   .000
+
+                      -- travel times and delays --
+  stn c pha remk p p-sec s-sec resid  std-er   dist  azm ain    tc c vthk  ttob-ttcal-dlay-edly=resid rmk stn pha sources
+  fir z      P 0   38.66        -.01     .10   38.8  199 102       1       7.49  7.26      .241  -.01     fir            
+  fir z s    S 0        43.98   -.16     .14             102       1      12.81 12.55      .417  -.16     fir s  
+  prn z      P 0   41.65         .05     .10   58.2  301  95       1      10.48 10.31      .129   .05     prn            
+  prn z s    S 0        49.15   -.07     .14              95       1      17.98 17.83      .222  -.07     prn s  
+  las z      P 0   42.90         .06     .10   66.0  175  94       1      11.73 11.53      .140   .06     las            
+  dmv z      P 0   46.57        -.02     .10   89.4  241  76       1      15.40 15.16      .262  -.02     dmv            
+  dmv z s    S 0        57.66   -.19     .15              76       1      26.49 26.22      .454  -.19     dmv s  
+  glo z      P 0   48.54        -.04     .11  102.7   55  76       1      17.37 17.20      .201  -.04     glo            
+  anj z      P 0   49.40         .01     .11  108.1  121  76       1      18.23 18.03      .190   .01     anj            
+  anj z s    S 0        62.57   -.13     .15              76       1      31.40 31.20      .329  -.13     anj s  
+ mzpu z      P 0   52.76         .00     .11  129.9  294  76       1      21.59 21.38      .209   .00    mzpu            
+ mzpu z s    S 0        68.38   -.14     .16              76       1      37.21 36.99      .361  -.14    mzpu s  
+  teh z      P 0   54.04         .08     .12  138.1  260  76       1      22.87 22.64      .150   .08     teh            
+  vrn z      P 0   56.14         .13     .13  151.6  225  76       1      24.97 24.72      .117   .13     vrn            
+  hsb z      P 0   57.11         .12     .13  157.9  248  76       1      25.94 25.70      .117   .12     hsb            
+  sfb z      P 0   01.95         .14     .16  189.4  198  76       1      30.78 30.54      .103   .14     sfb            
+
+                                     -- magnitude data --
+  stn c source sys    c10   amx gr ink     amf    per   unit/mm  gnd mot u xmgc xmag  fmp fmag
+ jump back to main input stream.
+
+ sound bell 
+  completed reading input phase file
+ average rms of all events =     .08798
+ average vp/vs ratio =        .00 for    0 events.  standard deviation of ratio =        .00
+
+ ***** class/     a     b     c     d total *****
+
+      number/    .0   1.0    .0    .0   1.0
+
+  percentage/    .0 100.0    .0    .0
+
+   include only class d and better in the following statistics.
+
+          ----------- p residuals --------------    ----------- s residuals -------------
+           no event wting        event wting         no event wting        event wting
+ station  n  wt  ave   sd     n   wt  ave   sd      n  wt   ave  sd     n   wt   ave  sd    station
+    anjz   1  .9  .005  .000   1 10.5  .005  .000    1  .4 -.128  .000   1  5.3 -.128  .000    anj
+    dmvz   1  .9 -.021  .000   1 11.2 -.021  .000    1  .5 -.188  .000   1  5.6 -.188  .000    dmv
+    firz   1 1.0 -.008  .000   1 12.0 -.008  .000    1  .5 -.161  .000   1  6.0 -.161  .000    fir
+    gloz   1  .9 -.036  .000   1 10.9 -.036  .000    0  .0  .000  .000   0   .0  .000  .000    glo
+    hsbz   1  .6  .123  .000   1  7.1  .123  .000    0  .0  .000  .000   0   .0  .000  .000    hsb
+    lasz   1 1.0  .061  .000   1 11.9  .061  .000    0  .0  .000  .000   0   .0  .000  .000    las
+    prnz   1 1.0  .045  .000   1 12.0  .045  .000    1  .5 -.072  .000   1  6.0 -.072  .000    prn
+    sfbz   1  .4  .137  .000   1  4.8  .137  .000    0  .0  .000  .000   0   .0  .000  .000    sfb
+    tehz   1  .7  .078  .000   1  8.5  .078  .000    0  .0  .000  .000   0   .0  .000  .000    teh
+    vrnz   1  .6  .132  .000   1  7.5  .132  .000    0  .0  .000  .000   0   .0  .000  .000    vrn
+   mzpuz   1  .8 -.001  .000   1  9.1 -.001  .000    1  .4 -.141  .000   1  4.5 -.141  .000   mzpu
+
+           s-p residuals        x-mag res       f-mag res
+ station  n  wt  ave   sd     n  ave   sd     n  ave   sd
+ irelo =  0 nreloc =  0

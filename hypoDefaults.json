@@ -1,0 +1,29 @@
+{
+    "VpVs": 1.75,
+    "elevationCorrection": [
+        0.0,
+        0.0
+    ],
+    "startingDepth": 8.0,
+    "distanceWeighting": [
+        1.0,
+        50.0,
+        300.0
+    ],
+    "maximumNumberOfIterations": 20,
+    "standardErrorForArrivalTimesWithWeightCode0": -0.10,
+    "locateWithS": 2.0,
+    "factorForWeightsOfSAndS_PTimes": 0.5,
+    "summaryOption": 2,
+    "printerOption": 0,
+    "constantsNoPrint": 0,
+    "compressOption": 0,
+    "tabulationOption": -4,
+    "weightOption": [
+        5.0,
+        10.0,
+        20.0
+    ],
+    "ignoreSummaryRec": 0,
+    "headerOption": "earthquake location"
+}
