@@ -1,0 +1,26 @@
+{
+    "eventsFile": "events/select.out",
+    "stationFile": "events/STATION0.HYP",
+    "velocityFile": "events/STATION0.HYP",
+    "velocityGridIntervals": [
+        1.0,
+        1.0,
+        1.0
+    ],
+    "decimationFactor": 0,
+    "stationLatBound": [
+        -0.5,
+        0.5
+    ],
+    "stationLonBound": [
+        -0.5,
+        0.5
+    ],
+    "numberOfRun": 2,
+    "numberOfModel": 20,
+    "numberOfIteration": 2,
+    "multiProcessingMode": 0,
+    "misfitFunction": "hypoellipse",
+    "metric": "GAP",
+    "maxIterWithoutNewGlobalBest": 50
+}
