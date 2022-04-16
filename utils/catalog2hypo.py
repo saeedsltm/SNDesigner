@@ -31,6 +31,7 @@ def catalog2hypoellipse(catalog, outFile):
                     picks[station]["S"]["time"] = pick.time
                     picks[station]["S"]["w"] = weight
             for station in picks:
+                if not picks[station]["P"]["phase"][0].strip(): continue
                 phaseP = picks[station]["P"]["phase"][0].upper()
                 arrivaltimeP = picks[station]["P"]["time"].strftime("%y%m%d%H%M%S.%f")[:15]
                 wP = picks[station]["P"]["w"]

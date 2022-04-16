@@ -1,6 +1,19 @@
-from numpy import array, ones, max, float16
+from numpy import array, ones, float16
 import pykonal
-from math import ceil
+from pathlib import Path
+import os
+import time
+
+def decoratortimer(decimal):
+    def decoratorfunction(f):
+        def wrap(*args, **kwargs):
+            time1 = time.monotonic()
+            result = f(*args, **kwargs)
+            time2 = time.monotonic()
+            print('{:s} function took {:.{}f} ms'.format(f.__name__, ((time2-time1)*1000.0), decimal ))
+            return result
+        return wrap
+    return decoratorfunction
 
 def makeVelocityGrid(velocityModelDict, nXnYnZ, node_intervals=(1., 1., 1.), min_coords=(0. ,0. ,0.), df=0):
     """
@@ -42,7 +55,8 @@ def makeVelocityGrid(velocityModelDict, nXnYnZ, node_intervals=(1., 1., 1.), min
     solverS.velocity.values = VG/VpVs
     return solverP.velocity, solverS.velocity
 
-def TravelTimeTable(solver, src_idx):
+# @decoratortimer(2)
+def TravelTimeTable(solver, src_idx, saveingPath):
     """
     Given velocity grid, it computes travel times by specifying source index
     - Inputs:
@@ -58,9 +72,9 @@ def TravelTimeTable(solver, src_idx):
     solver.unknown[src_idx] = False
     solver.trial.push(*src_idx)
     solver.solve()
-    return solver.traveltime
+    solver.traveltime.to_hdf(saveingPath)
 
-def computeTTT(velocity, source_z, z_interval):
+def computeTTT(velocity, source_z, z_interval, saveingPath):
     """
     Creating travel times table.
     - Inputs:
@@ -77,9 +91,10 @@ def computeTTT(velocity, source_z, z_interval):
     solver.velocity.node_intervals = velocity.node_intervals
     solver.velocity.npts = velocity.npts
     solver.velocity.values = velocity.values
-    tt = TravelTimeTable(solver, src_idx)
-    return tt
+    TravelTimeTable(solver, src_idx, saveingPath)
+    # return tt
 
+# @decoratortimer(2)
 def extractTT(traveltime, receivers=[]):
     """
     Extract travel time from given computational grid
@@ -92,17 +107,17 @@ def extractTT(traveltime, receivers=[]):
     extractedTT = list(map(traveltime.value, receivers))
     return extractedTT
 
-def generateTT(velocityModelDict, velocityType, source_z, zGridMax, receivers, node_intervals, decimationFactor):
-    nXnYnZ = ceil(max(receivers)+5), 1, zGridMax
+def generateTTT(velocityModelDict, velocityType, xGridMax, zGridMax, node_intervals, decimationFactor):
+    nXnYnZ = xGridMax, 1, zGridMax
     min_coords = (0.0, 0.0, 0.0)
-    node_intervals = node_intervals
-    decimationFactor = decimationFactor
     velocity_P, velocity_S = makeVelocityGrid(velocityModelDict, nXnYnZ, node_intervals, min_coords, decimationFactor)
     z_interval = node_intervals[-1]
-    if velocityType == "P":
-        traveltimeP = computeTTT(velocity_P, source_z, z_interval)
-        extractedTT = extractTT(traveltimeP, receivers)
-    else:
-        traveltimeS = computeTTT(velocity_S, source_z, z_interval)
-        extractedTT = extractTT(traveltimeS, receivers)
-    return extractedTT
+    Path("ttt").mkdir(parents=True, exist_ok=True)
+    for source_z in range(zGridMax):
+        saveingPath = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt=velocityType))
+        if os.path.exists(saveingPath):
+            os.remove(saveingPath)
+        if velocityType == "P":
+            computeTTT(velocity_P, source_z, z_interval, saveingPath)
+        else:
+            computeTTT(velocity_S, source_z, z_interval, saveingPath)

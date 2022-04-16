@@ -1,5 +1,17 @@
 import os, sys, platform
+import time
 
+def decoratortimer(decimal):
+    def decoratorfunction(f):
+        def wrap(*args, **kwargs):
+            time1 = time.monotonic()
+            result = f(*args, **kwargs)
+            time2 = time.monotonic()
+            print('{:s} function took {:.{}f} ms'.format(f.__name__, ((time2-time1)*1000.0), decimal ))
+            return result
+        return wrap
+    return decoratorfunction
+    
 # Check required files
 def checkRequiredFiles(f):
     if not os.path.exists(f):
@@ -25,7 +37,7 @@ def getStatistic(root):
                 ERZ.append(float(l[7:12]))
     return GAP, RMS, ERH, ERZ
 
-# Run Hypoellipse
+# @decoratortimer(2)
 def runHypoellipse(inputName):
     # Define rootName
     root = inputName

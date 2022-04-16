@@ -1,7 +1,7 @@
 from LatLon import lat_lon as ll
 from obspy import read_events
 from json import load
-from utils.synEq import generateTT
+from utils.synthTime import generateTTT, extractTT
 from utils.catalog2hypo import catalog2hypoellipse, station2hypoellipse, velocity2hypoellipse, generateHypoellipseDefaultFile
 from utils.hypoellipse import runHypoellipse
 from utils.hypo71 import runHypo71
@@ -12,6 +12,7 @@ from string import ascii_letters as al
 from random import choices
 from multiprocessing import Pool
 from fstpso import FuzzyPSO
+import pykonal
 from shutil import rmtree
 import os
 import time
@@ -69,23 +70,23 @@ class main():
             stationFile (str): station file in "NORDIC" format
 
         Returns:
-            None
+            (dict): a dictionary contains velocity model
         """
         emptyLines = 0
-        velocityModel = {"Vp": [], "Z": [], "VpVs": 1.73}
+        velocityModelDict = {"Vp": [], "Z": [], "VpVs": 1.73}
         with open(stationFile) as f:
             for l in f:
                 if not l.strip():
                     emptyLines += 1
                 if emptyLines == 2 and l.strip():
                     Vp, Z = [float(x) for x in l.split()[:2]]
-                    velocityModel["Vp"].append(Vp)
-                    velocityModel["Z"].append(Z)
+                    velocityModelDict["Vp"].append(Vp)
+                    velocityModelDict["Z"].append(Z)
                 if emptyLines == 3 and l.strip():
                     VpVs = float(l[16:20])
-                    velocityModel["VpVs"] = VpVs
+                    velocityModelDict["VpVs"] = VpVs
                     break
-        return velocityModel
+        return velocityModelDict
 
     def readStationFile(self, stationFile):
         """read station information from "STATION0.HYP" file
@@ -112,7 +113,7 @@ class main():
                     stations[code] = {"Lat":lat, "Lon":lon, "Elv":elv}
         return stations
 
-    @decoratortimer(2)
+    # @decoratortimer(2)
     def readEventFile(self):
         """read event file in "obspy" supported formats
 
@@ -121,6 +122,20 @@ class main():
         """
         catalog = read_events(self.parDict["eventsFile"])
         return catalog
+
+    def generateTTTable(self):
+        """generate travel time tables and store a bank of files
+        """
+        generateTTT(
+            self.velocityModelDict, "P",
+            self.parDict["xGridMax"], self.parDict["zGridMax"],
+            self.node_intervals, self.decimationFactor
+            )
+        generateTTT(
+            self.velocityModelDict, "S",
+            self.parDict["xGridMax"], self.parDict["zGridMax"],
+            self.node_intervals, self.decimationFactor
+            )
     
     # @decoratortimer(2)
     def computeNewDistances(self, eventLat, eventLon, picks, stations):
@@ -141,7 +156,7 @@ class main():
         distances = [gps(eventLat, eventLon, stationLat, stationLon)[0]*1e-3 for (stationLat, stationLon) in zip(stationLats, stationLons)]
         return [array([distance, 1.0, 0.0]) for distance in distances]
 
-    @decoratortimer(2)
+    # @decoratortimer(2)
     def writeCatalogFile(self, catalog, id):
         """write obspy catalog in hypoellipse format
 
@@ -154,6 +169,7 @@ class main():
         outFile = os.path.join(catPath, "{id:6s}.pha".format(id=id))
         catalog2hypoellipse(catalog, outFile)
     
+    # @decoratortimer(2)
     def writeStationFile(self, stations, id):
         """write station file in hypoellipse format
 
@@ -174,6 +190,7 @@ class main():
         station2hypoellipse(stationsDict, outFile)
         return stationsDict
 
+    # @decoratortimer(2)
     def writeVelocityFile(self, velocity, id):
         """write velocity model file in hypoellipse format
 
@@ -194,7 +211,7 @@ class main():
         outFile = os.path.join(defPath, "default.cfg")
         generateHypoellipseDefaultFile(self.hypoellipseDefaultsDict, outFile)
 
-    @decoratortimer(2)
+    # @decoratortimer(2)
     def computeNewArrivals(self, catalog, updatedStations):
         """given an obspy catalog and updated station locations it computes new arrival times
 
@@ -205,6 +222,7 @@ class main():
         Returns:
             obspy.catalog: an updated obspy catalog
         """
+        travelTimeDict = {}
         for event in catalog:
             preferred_origin = event.preferred_origin()
             originTime = preferred_origin.time
@@ -213,19 +231,23 @@ class main():
             depth = preferred_origin.depth
             picksP = [pick for pick in event.picks if "P" in pick.phase_hint]
             picksS = [pick for pick in event.picks if "S" in pick.phase_hint]
-            vm = self.velocityModelDict
             source_z = depth*1e-3
-            zGridMax = self.GridZMax
             receiversP = self.computeNewDistances(eventLatitude, eventLongitude, picksP, updatedStations)
             receiversS = self.computeNewDistances(eventLatitude, eventLongitude, picksS, updatedStations)
-            node_intervals = self.node_intervals
-            decimationFactor = self.decimationFactor
             extractedTTP = []
             extractedTTS = []
             if len(receiversP):
-                extractedTTP = generateTT(vm, "P", source_z, zGridMax, receiversP, node_intervals, decimationFactor)                
+                hdf5File = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="P"))
+                if hdf5File not in travelTimeDict:
+                    traveltime = pykonal.fields.read_hdf(hdf5File)  # type: ignore
+                    travelTimeDict[hdf5File] = traveltime
+                extractedTTP = extractTT(travelTimeDict[hdf5File], receiversP)                
             if len(receiversS):
-                extractedTTS = generateTT(vm, "S", source_z, zGridMax, receiversS, node_intervals, decimationFactor)
+                hdf5File = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="S"))
+                if hdf5File not in travelTimeDict:
+                    traveltime = pykonal.fields.read_hdf(hdf5File)  # type: ignore
+                    travelTimeDict[hdf5File] = traveltime                
+                extractedTTS = extractTT(travelTimeDict[hdf5File], receiversS)
             for pick in event.picks:
                 for pickP,newTT in zip(picksP, extractedTTP):
                     if pick.resource_id == pickP.resource_id:
@@ -293,7 +315,7 @@ class main():
             }
         return misfits[metric]
 
-    @decoratortimer(2)
+    # @decoratortimer(2)
     def loss(self, updatedStations):
         """given an updated location of stations it computes misfit based on event location accuracy
 
@@ -377,7 +399,7 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
-    @decoratortimer(2)
+    # @decoratortimer(2)
     def plotResults(self):
         """simple plot of the results
         """
@@ -396,5 +418,6 @@ class main():
 
 # run application
 myApp = main()
+# myApp.generateTTTable()
 myApp.runPSO()
 myApp.plotResults()
