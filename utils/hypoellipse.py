@@ -88,7 +88,7 @@ def runHypoellipse(inputName):
     # Run Hypoellipse in Windows
     if platform.system() == "Windows":
         with open("{0}_runHE.bat".format(root), "w") as f:
-            f.write("utils\hypoellipseMain.exe < {0} > NUL\n ".format(filecom))
+            f.write("..\\utils\\hypoellipseMain.exe < {0} > NUL\n ".format(filecom))
         cmd = "{0}_runHE.bat > NUL".format(root)
         os.system(cmd)
     # Run Hypoellipse in Linux

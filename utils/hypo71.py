@@ -43,7 +43,7 @@ def addHypo71VelocityModel(fileObject, velocityModelDict):
         velocityModelDict (dict): a dictionary contains P velocity and Vp/Vs ratio
     """
     Vp, Z, _ = velocityModelDict.items()
-    for v, z in zip(Vp, Z):
+    for v, z in zip(Vp[1], Z[1]):
         layer = "  {0:5.3f} {1:6.3f}\n".format(v, z)
         fileObject.write(layer)
     fileObject.write("\n")
@@ -201,19 +201,21 @@ def runHypo71(rootName):
     Returns:
         tuple: a tuple contains lists of Azimuthal gap, RMS, Horizontal and depth errors
     """
-    if platform.system() == "Linux":
-        cmd = "utils/hypo71Main < {0}.inp > /dev/null".format(rootName)
-        os.system(cmd)
-    elif platform.system() == "Windows":
-        cmd = "utils/hypo71Main.exe < {0}.inp > NUL".format(rootName)
-        os.system(cmd)
     createHypo71PhaseFile(rootName)
     createHypo71InputFile(rootName)
+    if platform.system() == "Linux":
+        cmd = "../utils/hypo71Main < {0}.inp > /dev/null".format(rootName)
+        os.system(cmd)
+    elif platform.system() == "Windows":
+        cmd = "..\\utils\\hypo71Main.exe < {0}.inp > NUL".format(rootName)
+        os.system(cmd)
     GAP, RMS, ERH, ERZ = getStatistic(rootName)
     for i in ["{0}_h71.pha".format(rootName),
               "{0}_h71.out".format(rootName),
               "{0}_h71.prt".format(rootName),
               "{0}_h71.res".format(rootName),
+              "{0}_h71.prm".format(rootName),
+              "{0}_h71.sta".format(rootName),
               "{0}.inp".format(rootName)]:
         if os.path.exists(i):
             os.remove(i)

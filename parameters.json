@@ -22,7 +22,7 @@
     "numberOfModel": 20,
     "numberOfIteration": 2,
     "multiProcessingMode": 0,
-    "misfitFunction": "hypoellipse",
+    "misfitFunction": "hypo71",
     "metric": "GAP",
     "maxIterWithoutNewGlobalBest": 50
 }
