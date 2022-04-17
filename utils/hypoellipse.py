@@ -1,29 +1,30 @@
-import os, sys, platform
-import time
+import os
+import platform
+import sys
 
-def decoratortimer(decimal):
-    def decoratorfunction(f):
-        def wrap(*args, **kwargs):
-            time1 = time.monotonic()
-            result = f(*args, **kwargs)
-            time2 = time.monotonic()
-            print('{:s} function took {:.{}f} ms'.format(f.__name__, ((time2-time1)*1000.0), decimal ))
-            return result
-        return wrap
-    return decoratorfunction
-    
-# Check required files
-def checkRequiredFiles(f):
-    if not os.path.exists(f):
-        print("{0} is not found!".format(f))
+from utils.extra import decoratortimer, mean
+
+
+def checkRequiredFiles(fIn):
+    """Check for required files and directories
+
+    Args:
+        fIn (str): file to be checked
+    """
+    if not os.path.exists(fIn):
+        print("{0} is not found!".format(fIn))
         sys.exit()
 
-# Get mean of a list
-def mean(a):
-    return sum(a)/len(a)
 
-# Get statistics of hypo71 outputs
 def getStatistic(root):
+    """Calculate statistic results
+
+    Args:
+        root (str): a root name for hypoellipse output files
+
+    Returns:
+        tuple: a tuple contains lists of Azimuthal gap, RMS, Horizontal and Depth errors
+    """
     GAP, RMS, ERH, ERZ = [], [], [], []
     with open("{0}.out".format(root)) as f:
         for l in f:
@@ -37,26 +38,35 @@ def getStatistic(root):
                 ERZ.append(float(l[7:12]))
     return GAP, RMS, ERH, ERZ
 
+
 # @decoratortimer(2)
 def runHypoellipse(inputName):
+    """Run Hypoellipse program to locate earthquake
+
+    Args:
+        inputName (str): a root name for hypoellipse output files
+
+    Returns:
+        tuple: a tuple contains lists of Azimuthal gap, RMS, Horizontal and Depth errors
+    """
     # Define rootName
     root = inputName
-    # PHASE FILE 
-    filepick="{0}.pha".format(root)
+    # PHASE FILE
+    filepick = "{0}.pha".format(root)
     checkRequiredFiles(filepick)
     # VELOCITY FILE
-    filevel="{0}.prm".format(root)
+    filevel = "{0}.prm".format(root)
     checkRequiredFiles(filevel)
     # STATION FILE
-    filesta="{0}.sta".format(root)
+    filesta = "{0}.sta".format(root)
     checkRequiredFiles(filesta)
     # PARAMETER FILE
-    filepar="default.cfg"
+    filepar = "default.cfg"
     checkRequiredFiles(filepar)
     # REFERENCE TIME
-    date="19800101"
+    date = "19800101"
     # CONTROL FILE
-    filecom="{0}.ctl".format(root)
+    filecom = "{0}.ctl".format(root)
     with open(filecom, "w") as f:
         f.write("stdin\n")
         f.write("y\n")
@@ -84,23 +94,24 @@ def runHypoellipse(inputName):
     # Run Hypoellipse in Linux
     elif platform.system() == "Linux":
         with open("{0}_runHE.sh".format(root), "w") as f:
-            f.write("../utils/hypoellipseMain < {0} 2>&1 >/dev/null\n ".format(filecom))
+            f.write(
+                "../utils/hypoellipseMain < {0} 2>&1 >/dev/null\n ".format(filecom))
         cmd = "bash {0}_runHE.sh".format(root)
         os.system(cmd)
     # Run and Get statistics
     GAP, RMS, ERH, ERZ = getStatistic(root)
     # Remove unused files
     for f in ["{0}.1st".format(root),
-            "{0}.2st".format(root),
-            "{0}.3sc".format(root),
-            "{0}.4sc".format(root),
-            "{0}.5sc".format(root),
-            "{0}.arc".format(root),
-            "{0}.log".format(root),
-            "{0}.sum".format(root),
-            "{0}_runHE.bat".format(root),
-            "{0}_runHE.sh".format(root),
-            filecom]:
+              "{0}.2st".format(root),
+              "{0}.3sc".format(root),
+              "{0}.4sc".format(root),
+              "{0}.5sc".format(root),
+              "{0}.arc".format(root),
+              "{0}.log".format(root),
+              "{0}.sum".format(root),
+              "{0}_runHE.bat".format(root),
+              "{0}_runHE.sh".format(root),
+              filecom]:
         if os.path.exists(f):
             os.remove(f)
     return GAP, RMS, ERH, ERZ

@@ -1,38 +1,31 @@
-from LatLon import lat_lon as ll
-from obspy import read_events
-from json import load
-from utils.synthTime import generateTTT, extractTT
-from utils.catalog2hypo import catalog2hypoellipse, station2hypoellipse, velocity2hypoellipse, generateHypoellipseDefaultFile
-from utils.hypoellipse import runHypoellipse
-from utils.hypo71 import runHypo71
-from obspy.geodetics.base import gps2dist_azimuth as gps
-from numpy import array, max, mean, loadtxt
-from pathlib import Path
-from string import ascii_letters as al
-from random import choices
-from multiprocessing import Pool
-from fstpso import FuzzyPSO
-import pykonal
-from shutil import rmtree
 import os
-import time
 import warnings
 from copy import deepcopy
+from json import load
+from multiprocessing import Pool
+from pathlib import Path
+from random import choices
+from shutil import rmtree
+from string import ascii_letters as al
+
+import pykonal
+from fstpso import FuzzyPSO
+from LatLon import lat_lon as ll
+from numpy import array, loadtxt, max, mean
+from obspy import read_events
+from obspy.geodetics.base import gps2dist_azimuth as gps
+
+from utils.catalog2hypo import (catalog2hypoellipse,
+                                createHypoellipseDefaultFile,
+                                station2hypoellipse, velocity2hypoellipse)
+from utils.extra import decoratortimer
+from utils.hypo71 import runHypo71
+from utils.hypoellipse import runHypoellipse
+from utils.synthTime import extractTT, generateTTT
 
 warnings.filterwarnings("ignore")
 
-def decoratortimer(decimal):
-    def decoratorfunction(f):
-        def wrap(*args, **kwargs):
-            time1 = time.monotonic()
-            result = f(*args, **kwargs)
-            time2 = time.monotonic()
-            print('{:s} function took {:.{}f} ms'.format(f.__name__, ((time2-time1)*1000.0), decimal ))
-            return result
-        return wrap
-    return decoratorfunction
 
-# define main class
 class main():
     def __init__(self):
         # reading main parameter file
@@ -40,9 +33,10 @@ class main():
             self.parDict = load(f)
         # reading "hypoellipse" defaults parameter file
         with open("hypoDefaults.json") as f:
-            self.hypoellipseDefaultsDict = load(f)            
+            self.hypoellipseDefaultsDict = load(f)
         # reading velocity file
-        self.velocityModelDict = self.readVelocityFile(self.parDict["velocityFile"])
+        self.velocityModelDict = self.readVelocityFile(
+            self.parDict["velocityFile"])
         # reading station file
         self.stationsDict = self.readStationFile(self.parDict["stationFile"])
         # setting "pykonal" parameters
@@ -53,7 +47,9 @@ class main():
         self.resPath = os.path.join("results")
         # setting execution number
         self.run_id = 0
-    
+        # set global variable for stroing traveltime tabels
+        self.travelTimeDict = {}
+
     def makeResultDirecory(self):
         """make result directory
         """
@@ -110,7 +106,7 @@ class main():
                     lon = ll.Longitude(degree=int(
                         l[15:17]), minute=float(l[17:22])).decimal_degree
                     elv = float(l[23:27])
-                    stations[code] = {"Lat":lat, "Lon":lon, "Elv":elv}
+                    stations[code] = {"Lat": lat, "Lon": lon, "Elv": elv}
         return stations
 
     # @decoratortimer(2)
@@ -130,13 +126,13 @@ class main():
             self.velocityModelDict, "P",
             self.parDict["xGridMax"], self.parDict["zGridMax"],
             self.node_intervals, self.decimationFactor
-            )
+        )
         generateTTT(
             self.velocityModelDict, "S",
             self.parDict["xGridMax"], self.parDict["zGridMax"],
             self.node_intervals, self.decimationFactor
-            )
-    
+        )
+
     # @decoratortimer(2)
     def computeNewDistances(self, eventLat, eventLon, picks, stations):
         """given event coordinates it computes new station's distance
@@ -153,7 +149,8 @@ class main():
         stationsInPicks = [pick.waveform_id.station_code for pick in picks]
         stationLats = [stations[station]["Lat"] for station in stationsInPicks]
         stationLons = [stations[station]["Lon"] for station in stationsInPicks]
-        distances = [gps(eventLat, eventLon, stationLat, stationLon)[0]*1e-3 for (stationLat, stationLon) in zip(stationLats, stationLons)]
+        distances = [gps(eventLat, eventLon, stationLat, stationLon)[
+            0]*1e-3 for (stationLat, stationLon) in zip(stationLats, stationLons)]
         return [array([distance, 1.0, 0.0]) for distance in distances]
 
     # @decoratortimer(2)
@@ -168,7 +165,7 @@ class main():
         catPath.mkdir(parents=True, exist_ok=True)
         outFile = os.path.join(catPath, "{id:6s}.pha".format(id=id))
         catalog2hypoellipse(catalog, outFile)
-    
+
     # @decoratortimer(2)
     def writeStationFile(self, stations, id):
         """write station file in hypoellipse format
@@ -181,7 +178,7 @@ class main():
             dict: a dictionary contains stations information
         """
         stationsDict = deepcopy(self.stationsDict)
-        for i,station in enumerate(stationsDict.keys()):
+        for i, station in enumerate(stationsDict.keys()):
             stationsDict[station]["Lat"] = stations[i]
             stationsDict[station]["Lon"] = stations[i+int(len(stations)/2)]
         staPath = Path(os.path.join("tmp"))
@@ -209,7 +206,7 @@ class main():
         defPath = Path(os.path.join("tmp"))
         defPath.mkdir(parents=True, exist_ok=True)
         outFile = os.path.join(defPath, "default.cfg")
-        generateHypoellipseDefaultFile(self.hypoellipseDefaultsDict, outFile)
+        createHypoellipseDefaultFile(self.hypoellipseDefaultsDict, outFile)
 
     # @decoratortimer(2)
     def computeNewArrivals(self, catalog, updatedStations):
@@ -222,7 +219,7 @@ class main():
         Returns:
             obspy.catalog: an updated obspy catalog
         """
-        travelTimeDict = {}
+
         for event in catalog:
             preferred_origin = event.preferred_origin()
             originTime = preferred_origin.time
@@ -232,31 +229,39 @@ class main():
             picksP = [pick for pick in event.picks if "P" in pick.phase_hint]
             picksS = [pick for pick in event.picks if "S" in pick.phase_hint]
             source_z = depth*1e-3
-            receiversP = self.computeNewDistances(eventLatitude, eventLongitude, picksP, updatedStations)
-            receiversS = self.computeNewDistances(eventLatitude, eventLongitude, picksS, updatedStations)
+            receiversP = self.computeNewDistances(
+                eventLatitude, eventLongitude, picksP, updatedStations)
+            receiversS = self.computeNewDistances(
+                eventLatitude, eventLongitude, picksS, updatedStations)
             extractedTTP = []
             extractedTTS = []
             if len(receiversP):
-                hdf5File = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="P"))
-                if hdf5File not in travelTimeDict:
-                    traveltime = pykonal.fields.read_hdf(hdf5File)  # type: ignore
-                    travelTimeDict[hdf5File] = traveltime
-                extractedTTP = extractTT(travelTimeDict[hdf5File], receiversP)                
+                hdf5File = os.path.join(
+                    "ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="P"))
+                if hdf5File not in self.travelTimeDict:
+                    traveltime = pykonal.fields.read_hdf(  # type: ignore
+                        hdf5File)
+                    self.travelTimeDict[hdf5File] = traveltime
+                extractedTTP = extractTT(
+                    self.travelTimeDict[hdf5File], receiversP)
             if len(receiversS):
-                hdf5File = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="S"))
-                if hdf5File not in travelTimeDict:
-                    traveltime = pykonal.fields.read_hdf(hdf5File)  # type: ignore
-                    travelTimeDict[hdf5File] = traveltime                
-                extractedTTS = extractTT(travelTimeDict[hdf5File], receiversS)
+                hdf5File = os.path.join(
+                    "ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="S"))
+                if hdf5File not in self.travelTimeDict:
+                    traveltime = pykonal.fields.read_hdf(  # type: ignore
+                        hdf5File)
+                    self.travelTimeDict[hdf5File] = traveltime
+                extractedTTS = extractTT(
+                    self.travelTimeDict[hdf5File], receiversS)
             for pick in event.picks:
-                for pickP,newTT in zip(picksP, extractedTTP):
+                for pickP, newTT in zip(picksP, extractedTTP):
                     if pick.resource_id == pickP.resource_id:
                         pick.time = originTime + newTT
-                for pickS,newTT in zip(picksS, extractedTTS):
+                for pickS, newTT in zip(picksS, extractedTTS):
                     if pick.resource_id == pickS.resource_id:
                         pick.time = originTime + newTT
         return catalog
-    
+
     def setSearchSpace(self, stationsDict):
         """setting bounds for stations coordinates
 
@@ -266,8 +271,10 @@ class main():
         Returns:
             list: a list contains each station min-max bounds
         """
-        stationLats = [stationsDict[station]["Lat"] for station in stationsDict]
-        stationLons = [stationsDict[station]["Lon"] for station in stationsDict]
+        stationLats = [stationsDict[station]["Lat"]
+                       for station in stationsDict]
+        stationLons = [stationsDict[station]["Lon"]
+                       for station in stationsDict]
         incLatMin = self.parDict["stationLatBound"][0]
         incLatMax = self.parDict["stationLatBound"][1]
         incLonMin = self.parDict["stationLatBound"][0]
@@ -288,12 +295,13 @@ class main():
             f.write("\n")
         stationsDict = deepcopy(self.stationsDict)
         bestStations = [v for v in bestStations[0].X]
-        for i,station in enumerate(stationsDict.keys()):
+        for i, station in enumerate(stationsDict.keys()):
             stationsDict[station]["Lat"] = bestStations[i]
-            stationsDict[station]["Lon"] = bestStations[i+int(len(bestStations)/2)]
+            stationsDict[station]["Lon"] = bestStations[i +
+                                                        int(len(bestStations)/2)]
         outFile = os.path.join(self.resPath, "final.sta")
         station2hypoellipse(stationsDict, outFile)
-    
+
     def evaluateMisfit(self, metric, gap, rms, erh, erz):
         """evalute misfit value based on location accuracy
 
@@ -308,11 +316,11 @@ class main():
             float: a misfit value
         """
         misfits = {
-            "GAP":mean(gap), 
-            "RMS":mean(rms),
-            "ERH":mean(erh),
-            "ERZ":mean(erz)
-            }
+            "GAP": mean(gap),
+            "RMS": mean(rms),
+            "ERH": mean(erh),
+            "ERZ": mean(erz)
+        }
         return misfits[metric]
 
     # @decoratortimer(2)
@@ -334,16 +342,20 @@ class main():
         os.chdir("tmp")
         if self.parDict["misfitFunction"] == "hypoellipse":
             GAP, RMS, ERH, ERZ = runHypoellipse(randomID)
-            misfit = self.evaluateMisfit(self.parDict["metric"], GAP, RMS, ERH, ERZ)
-            cmd = "rm {prefix}*".format(prefix=randomID); os.system(cmd)
+            misfit = self.evaluateMisfit(
+                self.parDict["metric"], GAP, RMS, ERH, ERZ)
+            cmd = "rm {prefix}*".format(prefix=randomID)
+            os.system(cmd)
             os.chdir(root)
-            return misfit           
+            return misfit
         elif self.parDict["misfitFunction"] == "hypo71":
             GAP, RMS, ERH, ERZ = runHypo71(randomID)
-            misfit = self.evaluateMisfit(self.parDict["metric"], GAP, RMS, ERH, ERZ)
-            cmd = "rm {prefix}*".format(prefix=randomID); os.system(cmd)
+            misfit = self.evaluateMisfit(
+                self.parDict["metric"], GAP, RMS, ERH, ERZ)
+            cmd = "rm {prefix}*".format(prefix=randomID)
+            os.system(cmd)
             os.chdir(root)
-            return misfit          
+            return misfit
 
     def lossparallel(self, particles):
         """execute loos function in parallel
@@ -357,7 +369,7 @@ class main():
         if self.parDict["multiProcessingMode"] == 0:
             numberOfCPU = 1
         else:
-            numberOfCPU = os.cpu_count()        
+            numberOfCPU = os.cpu_count()
         p = Pool(numberOfCPU)
         results = p.map(self.loss, particles)
         p.close()
@@ -372,7 +384,8 @@ class main():
         FP = FuzzyPSO(logfile=os.path.join(self.resPath, "log.dat"))
         searchSpace = self.setSearchSpace(self.stationsDict)
         FP.set_search_space(searchSpace)
-        bestFitnessOutFile = os.path.join(self.resPath, "bestFitness_{0:d}.dat".format(self.run_id+1))
+        bestFitnessOutFile = os.path.join(
+            self.resPath, "bestFitness_{0:d}.dat".format(self.run_id+1))
         if self.parDict["numberOfModel"] != 0:
             FP.set_swarm_size(self.parDict["numberOfModel"])
         if self.parDict["multiProcessingMode"] != 0:
@@ -399,22 +412,24 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
-    # @decoratortimer(2)
+    @decoratortimer(2)
     def plotResults(self):
         """simple plot of the results
         """
         import matplotlib.pyplot as plt
         initialStations = deepcopy(self.stationsDict)
         finalStations = loadtxt(os.path.join(self.resPath, "bestModel.dat"))
-        for i,station in enumerate(list(initialStations.keys())):
+        for i, station in enumerate(list(initialStations.keys())):
             x = initialStations[station]["Lon"]
             y = initialStations[station]["Lat"]
             yy = finalStations[i]
             xx = finalStations[i+len(initialStations.keys())]
             plt.plot(x, y, "r^", ms=5, alpha=.5)
             plt.plot(xx, yy, "b^", ms=5, alpha=.5)
-            plt.arrow(x, y, xx-x, yy-y, head_width=.05, head_length=.05, zorder=10)
-        plt.savefig(os.path.join(self.resPath, "BestModel.pdf"))
+            plt.arrow(x, y, xx-x, yy-y, head_width=.05,
+                      head_length=.05, zorder=10)
+        plt.savefig(os.path.join(self.resPath, "BestModel.png"))
+
 
 # run application
 myApp = main()
