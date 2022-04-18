@@ -56,8 +56,12 @@ def catalog2hypoellipse(catalog, outFile):
                     arrivaltimeS = picks[station]["S"]["time"] - \
                         picks[station]["P"]["time"].replace(
                             second=0, microsecond=0)
-                    arrivaltimeS = "{arrivaltimeS:6.2f}".format(
-                        arrivaltimeS=arrivaltimeS)
+                    if arrivaltimeS >= 1e2:
+                        arrivaltimeS = "{arrivaltimeS:6.1f}".format(
+                            arrivaltimeS=arrivaltimeS)
+                    else:
+                        arrivaltimeS = "{arrivaltimeS:6.2f}".format(
+                            arrivaltimeS=arrivaltimeS)
                     wS = picks[station]["S"]["w"]
                 else:
                     phaseS = picks[station]["S"]["phase"]
@@ -112,16 +116,16 @@ def createHypoellipseDefaultFile(defaultsDict, outFile):
         f.write("reset test         1    {0:6.2f}\n".format(
             defaultsDict["VpVs"]))
         f.write("reset test         2    {0:6.2f}\n".format(
-            defaultsDict["elevationCorrection"][0]))
+            defaultsDict["PVelocityForElevationCorrection"]))
         f.write("reset test         8    {0:6.2f}\n".format(
-            defaultsDict["elevationCorrection"][1]))
+            defaultsDict["ElevationOfTopOfComputedModels"]))
         f.write("reset test         5    {0:6.2f}\n".format(
             defaultsDict["startingDepth"]))
         f.write("reset test         10   {0:6.2f}\n".format(
             defaultsDict["distanceWeighting"][0]))
         f.write("reset test         11   {0:6.2f}\n".format(
             defaultsDict["distanceWeighting"][1]))
-        f.write("reset test         12   {0:6.2f}\n".format(
+        f.write("reset test         12   {0:6.1f}\n".format(
             defaultsDict["distanceWeighting"][2]))
         f.write("reset test         21   {0:6.2f}\n".format(
             defaultsDict["maximumNumberOfIterations"]))

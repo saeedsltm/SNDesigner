@@ -113,22 +113,20 @@ def parseHypoellipseVelocity(hypoellipseVelocityModelFile):
     return velocityModelDict
 
 
-def prepareHypo71ControlLine(hypoellipseVelocityModelFile, trialDepth=10, xNear=75, xFar=400):
-    """Prepare hypo71 control file
+def prepareHypo71ControlLine(hypoellipseVelocityModelFile, defaultsDict):
+    """_summary_
 
     Args:
         hypoellipseVelocityModelFile (str): velocity model fil in hypoellipse format
-        trialDepth (int, optional): trial depth in km. Defaults to 10.
-        xNear (int, optional): nearest station with full weight. Defaults to 75.
-        xFar (int, optional): the most far station with zero weight. Defaults to 400.
+        defaultsDict (dict): a dictionary contains defaults for hypo71 control line
 
     Returns:
         str: hypo71 control line
-    """
+    """  
     velocityModelDict = parseHypoellipseVelocity(hypoellipseVelocityModelFile)
     VpVs = mean(velocityModelDict["VpVs"])
-    controlLine = "{0:4d}.{1:4d}.{2:4d}.{3:5.2f}    4    0    0    1    1    0    0 0111\n".format(
-        trialDepth, xNear, xFar, VpVs)
+    controlLine = "{0:4.0f}.{1:4.0f}.{2:4.0f}.{3:5.2f}    4    0    0    1    1    0    0 0111\n".format(
+        defaultsDict["startingDepth"], defaultsDict["distanceWeighting"][1], defaultsDict["distanceWeighting"][2], VpVs)
     return controlLine
 
 
@@ -156,7 +154,7 @@ def getStatistic(rootName):
     return GAP, RMS, ERH, ERZ
 
 
-def createHypo71PhaseFile(rootName):
+def createHypo71PhaseFile(rootName, defaultsDict):
     """Create phase file in hypo71 format
 
     Args:
@@ -172,7 +170,7 @@ def createHypo71PhaseFile(rootName):
         addHypo71Stations(f, stationDict)
         velocityModel = parseHypoellipseVelocity(hypoellipseVelocityModelFile)
         addHypo71VelocityModel(f, velocityModel)
-        controlLine = prepareHypo71ControlLine(hypoellipseVelocityModelFile)
+        controlLine = prepareHypo71ControlLine(hypoellipseVelocityModelFile, defaultsDict)
         addHypo71ControlLine(f, controlLine)
         addHypo71Phase(f, hypoellipsePhaseFile)
 
@@ -192,7 +190,7 @@ def createHypo71InputFile(rootName):
         f.write("\n\n")
 
 
-def runHypo71(rootName):
+def runHypo71(rootName, defaultsDict):
     """Run hypo71 program to locate earthquakes
 
     Args:
@@ -201,7 +199,7 @@ def runHypo71(rootName):
     Returns:
         tuple: a tuple contains lists of Azimuthal gap, RMS, Horizontal and depth errors
     """
-    createHypo71PhaseFile(rootName)
+    createHypo71PhaseFile(rootName, defaultsDict)
     createHypo71InputFile(rootName)
     if platform.system() == "Linux":
         cmd = "../utils/hypo71Main < {0}.inp > /dev/null".format(rootName)

@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pykonal
 from numpy import array, float16, ones
+from tqdm.contrib import tzip
 
 from utils.extra import decoratortimer
 
 
-@decoratortimer(2)
+# @decoratortimer(2)
 def generateVelocityGrid(velocityModelDict, nXnYnZ, node_intervals=(1., 1., 1.), min_coords=(0., 0., 0.), df=0):
     """Generating velocity grid for both P and S velocities
 
@@ -53,7 +54,7 @@ def generateVelocityGrid(velocityModelDict, nXnYnZ, node_intervals=(1., 1., 1.),
     return solverP.velocity, solverS.velocity
 
 
-@decoratortimer(2)
+# @decoratortimer(2)
 def TravelTimeTable(solver, src_idx, saveingPath):
     """Given velocity grid, it computes travel times by specifying source index
 
@@ -69,7 +70,7 @@ def TravelTimeTable(solver, src_idx, saveingPath):
     solver.traveltime.to_hdf(saveingPath)
 
 
-@decoratortimer(2)
+# @decoratortimer(2)
 def computeTTT(velocity, source_z, z_interval, saveingPath):
     """Creating travel times table
 
@@ -108,7 +109,8 @@ def generateTTT(velocityModelDict, velocityType, xGridMax, zGridMax, node_interv
         velocityModelDict, nXnYnZ, node_intervals, min_coords, decimationFactor)
     z_interval = node_intervals[-1]
     Path("ttt").mkdir(parents=True, exist_ok=True)
-    for source_z in range(zGridMax):
+    for source_z in tzip(range(zGridMax)):
+        source_z = source_z[0]
         saveingPath = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(
             z=int(source_z), vt=velocityType))
         if os.path.exists(saveingPath):

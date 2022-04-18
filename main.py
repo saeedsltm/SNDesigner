@@ -33,7 +33,7 @@ class main():
             self.parDict = load(f)
         # reading "hypoellipse" defaults parameter file
         with open("hypoDefaults.json") as f:
-            self.hypoellipseDefaultsDict = load(f)
+            self.hypoDefaultsDict = load(f)
         # reading velocity file
         self.velocityModelDict = self.readVelocityFile(
             self.parDict["velocityFile"])
@@ -47,7 +47,7 @@ class main():
         self.resPath = os.path.join("results")
         # setting execution number
         self.run_id = 0
-        # set global variable for stroing traveltime tabels
+        # set global variable for storing traveltime tabels
         self.travelTimeDict = {}
 
     def makeResultDirecory(self):
@@ -122,11 +122,16 @@ class main():
     def generateTTTable(self):
         """generate travel time tables and store a bank of files
         """
+        xMaxDist = self.parDict["xGridMax"] * self.parDict["velocityGridIntervals"][0]
+        zMaxDist = self.parDict["zGridMax"] * self.parDict["velocityGridIntervals"][2]
+        print("\n+++ Generating travel time tables for X range (0, {xMax:4.0f})km, and Z range (0, {zMax:4.0f})km\n".format(xMax=xMaxDist, zMax=zMaxDist))
+        print("+++ Generating travel time tables for P phase ")
         generateTTT(
             self.velocityModelDict, "P",
             self.parDict["xGridMax"], self.parDict["zGridMax"],
             self.node_intervals, self.decimationFactor
         )
+        print("+++ Generating travel time tables for S phase ")
         generateTTT(
             self.velocityModelDict, "S",
             self.parDict["xGridMax"], self.parDict["zGridMax"],
@@ -206,7 +211,7 @@ class main():
         defPath = Path(os.path.join("tmp"))
         defPath.mkdir(parents=True, exist_ok=True)
         outFile = os.path.join(defPath, "default.cfg")
-        createHypoellipseDefaultFile(self.hypoellipseDefaultsDict, outFile)
+        createHypoellipseDefaultFile(self.hypoDefaultsDict, outFile)
 
     # @decoratortimer(2)
     def computeNewArrivals(self, catalog, updatedStations):
@@ -238,7 +243,7 @@ class main():
             if len(receiversP):
                 hdf5File = os.path.join(
                     "ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="P"))
-                if hdf5File not in self.travelTimeDict:
+                if hdf5File not in self.travelTimeDict.keys():
                     traveltime = pykonal.fields.read_hdf(  # type: ignore
                         hdf5File)
                     self.travelTimeDict[hdf5File] = traveltime
@@ -247,7 +252,7 @@ class main():
             if len(receiversS):
                 hdf5File = os.path.join(
                     "ttt", "dep{z:003d}{vt:s}.hdf5".format(z=int(source_z), vt="S"))
-                if hdf5File not in self.travelTimeDict:
+                if hdf5File not in self.travelTimeDict.keys():
                     traveltime = pykonal.fields.read_hdf(  # type: ignore
                         hdf5File)
                     self.travelTimeDict[hdf5File] = traveltime
@@ -349,7 +354,7 @@ class main():
             os.chdir(root)
             return misfit
         elif self.parDict["misfitFunction"] == "hypo71":
-            GAP, RMS, ERH, ERZ = runHypo71(randomID)
+            GAP, RMS, ERH, ERZ = runHypo71(randomID, self.hypoDefaultsDict)
             misfit = self.evaluateMisfit(
                 self.parDict["metric"], GAP, RMS, ERH, ERZ)
             cmd = "rm {prefix}*".format(prefix=randomID)
