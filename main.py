@@ -1,6 +1,7 @@
 import os
 import warnings
 from copy import deepcopy
+from shutil import copy
 from json import load
 from multiprocessing import Pool
 from pathlib import Path
@@ -22,6 +23,9 @@ from utils.extra import decoratortimer
 from utils.hypo71 import runHypo71
 from utils.hypoellipse import runHypoellipse
 from utils.synthTime import extractTT, generateTTT
+from utils.parseHypo import parseHypoellipseOutput, parseHypocenterOutput
+from utils.visualizer import plotGap
+
 
 warnings.filterwarnings("ignore")
 
@@ -49,6 +53,8 @@ class main():
         self.run_id = 0
         # set global variable for storing traveltime tabels
         self.travelTimeDict = {}
+        # reading catalog
+        self.catalog = self.readEventFile()
 
     def makeResultDirecory(self):
         """make result directory
@@ -384,7 +390,6 @@ class main():
         """main function of fst-pso
         """
         self.makeResultDirecory()
-        self.catalog = self.readEventFile()
         self.writeHypoellipseConfigFile()
         FP = FuzzyPSO(logfile=os.path.join(self.resPath, "log.dat"))
         searchSpace = self.setSearchSpace(self.stationsDict)
@@ -417,6 +422,23 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
+    def finalLocation(self, hypoellipse=True, hypo71=False):
+        self.writeCatalogFile(self.catalog, "finalrun")
+        self.writeVelocityFile(self.velocityModelDict, "finalrun")
+        copy(os.path.join("results", "final.sta"), os.path.join("tmp", "finalrun.sta"))
+        if hypoellipse:
+            root = os.getcwd()
+            os.chdir("tmp")
+            runHypoellipse("finalrun")
+            os.chdir(root)
+            return os.path.join("tmp", "finalrun.out")
+        elif hypo71:
+            root = os.getcwd()
+            os.chdir("tmp")            
+            runHypo71("finalrun", self.hypoDefaultsDict)
+            os.chdir(root)
+            return os.path.join("tmp", "finalrun.out")
+
     @decoratortimer(2)
     def plotResults(self):
         """simple plot of the results
@@ -439,5 +461,9 @@ class main():
 # run application
 myApp = main()
 # myApp.generateTTTable()
-myApp.runPSO()
-myApp.plotResults()
+# myApp.runPSO()
+# myApp.plotResults()
+# hypOut = myApp.finalLocation(hypoellipse=True)
+# dfHypoellipse = parseHypoellipseOutput("tmp/finalrun.out")
+dfHypocenter = parseHypocenterOutput("events/select.out")
+plotGap(dfHypocenter)

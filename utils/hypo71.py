@@ -195,6 +195,7 @@ def runHypo71(rootName, defaultsDict):
 
     Args:
         rootName (str): root name of hypo71 output files
+        defaultsDict (dict): a dictionary contains default values for hypo71 TESTs
 
     Returns:
         tuple: a tuple contains lists of Azimuthal gap, RMS, Horizontal and depth errors
