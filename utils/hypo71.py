@@ -210,7 +210,7 @@ def runHypo71(rootName, defaultsDict):
         os.system(cmd)
     GAP, RMS, ERH, ERZ = getStatistic(rootName)
     for i in ["{0}_h71.pha".format(rootName),
-              "{0}_h71.out".format(rootName),
+            #   "{0}_h71.out".format(rootName),
               "{0}_h71.prt".format(rootName),
               "{0}_h71.res".format(rootName),
               "{0}_h71.prm".format(rootName),

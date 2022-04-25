@@ -22,8 +22,9 @@ from utils.catalog2hypo import (catalog2hypoellipse,
 from utils.extra import decoratortimer
 from utils.hypo71 import runHypo71
 from utils.hypoellipse import runHypoellipse
+from  utils.hypocenter import runHypocenter
 from utils.synthTime import extractTT, generateTTT
-from utils.parseHypo import parseHypoellipseOutput, parseHypocenterOutput
+from utils.parseHypo import parseHypoellipseOutput, parseHypo71Output, parseHypocenterOutput
 from utils.visualizer import plotGap
 
 
@@ -75,7 +76,7 @@ class main():
             (dict): a dictionary contains velocity model
         """
         emptyLines = 0
-        velocityModelDict = {"Vp": [], "Z": [], "VpVs": 1.73}
+        velocityModelDict = {"Vp": [], "Z": [], "VpVs": 1.73, "Moho":46.0}
         with open(stationFile) as f:
             for l in f:
                 if not l.strip():
@@ -84,6 +85,9 @@ class main():
                     Vp, Z = [float(x) for x in l.split()[:2]]
                     velocityModelDict["Vp"].append(Vp)
                     velocityModelDict["Z"].append(Z)
+                if emptyLines == 2 and len(l) > 20 and l[21] == "N":
+                    _, Z = [float(x) for x in l.split()[:2]]
+                    velocityModelDict["Moho"] = Z
                 if emptyLines == 3 and l.strip():
                     VpVs = float(l[16:20])
                     velocityModelDict["VpVs"] = VpVs
@@ -422,22 +426,29 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
-    def finalLocation(self, hypoellipse=True, hypo71=False):
-        self.writeCatalogFile(self.catalog, "finalrun")
-        self.writeVelocityFile(self.velocityModelDict, "finalrun")
-        copy(os.path.join("results", "final.sta"), os.path.join("tmp", "finalrun.sta"))
+    def finalLocation(self, hypoellipse=False, hypo71=False, hypocenter=True):
+        outName = "finRun"
+        self.writeCatalogFile(self.catalog, outName)
+        self.writeVelocityFile(self.velocityModelDict, outName)
+        copy(os.path.join("results", "final.sta"), os.path.join("tmp", "{0:s}.sta".format(outName)))
         if hypoellipse:
             root = os.getcwd()
             os.chdir("tmp")
-            runHypoellipse("finalrun")
+            runHypoellipse(outName)
             os.chdir(root)
-            return os.path.join("tmp", "finalrun.out")
+            return os.path.join("tmp", "{0:s}.out".format(outName))
         elif hypo71:
             root = os.getcwd()
             os.chdir("tmp")            
-            runHypo71("finalrun", self.hypoDefaultsDict)
+            runHypo71(outName, self.hypoDefaultsDict)
             os.chdir(root)
-            return os.path.join("tmp", "finalrun.out")
+            return os.path.join("tmp", "{0:s}_h71.out".format(outName))
+        elif hypocenter:
+            root = os.getcwd()
+            os.chdir("tmp")            
+            runHypocenter(outName, self.velocityModelDict, self.stationsDict, self.hypoDefaultsDict)
+            os.chdir(root)
+            return os.path.join("tmp", "{0:s}.out".format(outName))
 
     @decoratortimer(2)
     def plotResults(self):
@@ -463,7 +474,8 @@ myApp = main()
 # myApp.generateTTTable()
 # myApp.runPSO()
 # myApp.plotResults()
-# hypOut = myApp.finalLocation(hypoellipse=True)
-# dfHypoellipse = parseHypoellipseOutput("tmp/finalrun.out")
 dfHypocenter = parseHypocenterOutput("events/select.out")
-plotGap(dfHypocenter)
+plotGap(dfHypocenter, "initial")
+hypo71Out = myApp.finalLocation(hypo71=True)
+dfHypo71 = parseHypo71Output(hypo71Out)
+plotGap(dfHypo71, "finHypo71")

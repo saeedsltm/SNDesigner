@@ -16,10 +16,17 @@ headers = {"OTs":[],
            "ERZs":[]
            }
 
-def parseOT(l):
-    for i in [5, 7, 10, 11, 12, 13, 15, 16, 18, 19]:
+def parseOT(l, hypo71=False):
+    dateTimeIndex = [5, 7, 10, 11, 12, 13, 15, 16, 18, 19]
+    fmt = " %Y%m%d %H%M %S.%f"
+    reclen = 20
+    if hypo71:
+        dateTimeIndex = [0, 1, 2, 3, 4, 7, 8, 9, 10, 12, 13, 15, 16 ]
+        fmt = "%y%m%d %H%M %S.%f"
+        reclen = 17
+    for i in dateTimeIndex:
         l = l[:i] + l[i].replace(" ", "0") + l[i+1:]
-    ot = dt.strptime(l[:20], " %Y%m%d %H%M %S.%f")
+    ot = dt.strptime(l[:reclen], fmt)
     return ot
 
 def parseStatistics(l):
@@ -58,6 +65,31 @@ def parseHypoellipseOutput(hypOut):
                 df = pn.concat([df, pn.DataFrame(eventDict)])
     return df
 
+def parseHypo71Output(hypOut):
+    df = pn.DataFrame(headers)
+    ot, lat, lon, dep, gap, rms, seh, sez = [None]*8
+    with open(hypOut) as f:
+        next(f)
+        for l in f:
+            try:
+                ot = parseOT(l, hypo71=True)
+                lat = ll.Latitude(degree=float(l[18:20]), minute=float(l[21:26])).decimal_degree
+                lon = ll.Longitude(degree=float(l[28:30]), minute=float(l[31:36])).decimal_degree
+                dep = float(l[38:43])
+                gap = float(l[54:57])
+                rms = float(l[62:67])
+                seh = float(l[67:72])
+                sez = float(l[72:77])
+                eventDict = deepcopy(headers)
+                keys = eventDict.keys()
+                values = [ot, lat, lon, dep, gap, rms, seh, sez]
+                for k,v in zip(keys, values):
+                    eventDict[k].append(v)
+                df = pn.concat([df, pn.DataFrame(eventDict)])  
+            except ValueError:
+                continue
+    return df
+  
 def parseHypocenterOutput(hypOut):
     catalog = read_events(hypOut)
     df = pn.DataFrame(headers)
