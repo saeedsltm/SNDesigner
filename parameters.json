@@ -24,5 +24,6 @@
     "multiProcessingMode": 0,
     "misfitFunction": "hypo71",
     "metric": "GAP",
-    "maxIterWithoutNewGlobalBest": 50
+    "maxIterWithoutNewGlobalBest": 50,
+    "finalLocator": "hypocenter"
 }

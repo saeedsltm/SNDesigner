@@ -1,18 +1,17 @@
 import os
 import warnings
 from copy import deepcopy
-from shutil import copy
 from json import load
 from multiprocessing import Pool
 from pathlib import Path
 from random import choices
-from shutil import rmtree
+from shutil import copy, rmtree
 from string import ascii_letters as al
 
 import pykonal
 from fstpso import FuzzyPSO
 from LatLon import lat_lon as ll
-from numpy import array, loadtxt, max, mean
+from numpy import array, max, mean
 from obspy import read_events
 from obspy.geodetics.base import gps2dist_azimuth as gps
 
@@ -21,12 +20,12 @@ from utils.catalog2hypo import (catalog2hypoellipse,
                                 station2hypoellipse, velocity2hypoellipse)
 from utils.extra import decoratortimer
 from utils.hypo71 import runHypo71
+from utils.hypocenter import runHypocenter
 from utils.hypoellipse import runHypoellipse
-from  utils.hypocenter import runHypocenter
+from utils.parseHypo import (parseHypo71Output, parseHypocenterOutput,
+                             parseHypoellipseOutput)
 from utils.synthTime import extractTT, generateTTT
-from utils.parseHypo import parseHypoellipseOutput, parseHypo71Output, parseHypocenterOutput
-from utils.visualizer import plotGap
-
+from utils.visualizer import plotResults
 
 warnings.filterwarnings("ignore")
 
@@ -76,7 +75,7 @@ class main():
             (dict): a dictionary contains velocity model
         """
         emptyLines = 0
-        velocityModelDict = {"Vp": [], "Z": [], "VpVs": 1.73, "Moho":46.0}
+        velocityModelDict = {"Vp": [], "Z": [], "VpVs": 1.73, "Moho": 46.0}
         with open(stationFile) as f:
             for l in f:
                 if not l.strip():
@@ -132,9 +131,12 @@ class main():
     def generateTTTable(self):
         """generate travel time tables and store a bank of files
         """
-        xMaxDist = self.parDict["xGridMax"] * self.parDict["velocityGridIntervals"][0]
-        zMaxDist = self.parDict["zGridMax"] * self.parDict["velocityGridIntervals"][2]
-        print("\n+++ Generating travel time tables for X range (0, {xMax:4.0f})km, and Z range (0, {zMax:4.0f})km\n".format(xMax=xMaxDist, zMax=zMaxDist))
+        xMaxDist = self.parDict["xGridMax"] * \
+            self.parDict["velocityGridIntervals"][0]
+        zMaxDist = self.parDict["zGridMax"] * \
+            self.parDict["velocityGridIntervals"][2]
+        print("\n+++ Generating travel time tables for X range (0, {xMax:4.0f})km, and Z range (0, {zMax:4.0f})km\n".format(
+            xMax=xMaxDist, zMax=zMaxDist))
         print("+++ Generating travel time tables for P phase ")
         generateTTT(
             self.velocityModelDict, "P",
@@ -426,11 +428,12 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
-    def finalLocation(self, hypoellipse=False, hypo71=False, hypocenter=True):
+    def doFinalLocation(self, hypoellipse=False, hypo71=False, hypocenter=True):
         outName = "finRun"
         self.writeCatalogFile(self.catalog, outName)
         self.writeVelocityFile(self.velocityModelDict, outName)
-        copy(os.path.join("results", "final.sta"), os.path.join("tmp", "{0:s}.sta".format(outName)))
+        copy(os.path.join("results", "final.sta"),
+             os.path.join("tmp", "{0:s}.sta".format(outName)))
         if hypoellipse:
             root = os.getcwd()
             os.chdir("tmp")
@@ -439,43 +442,32 @@ class main():
             return os.path.join("tmp", "{0:s}.out".format(outName))
         elif hypo71:
             root = os.getcwd()
-            os.chdir("tmp")            
+            os.chdir("tmp")
             runHypo71(outName, self.hypoDefaultsDict)
             os.chdir(root)
             return os.path.join("tmp", "{0:s}_h71.out".format(outName))
         elif hypocenter:
             root = os.getcwd()
-            os.chdir("tmp")            
-            runHypocenter(outName, self.velocityModelDict, self.stationsDict, self.hypoDefaultsDict)
+            os.chdir("tmp")
+            runHypocenter(outName, self.velocityModelDict,
+                          self.stationsDict, self.hypoDefaultsDict)
             os.chdir(root)
             return os.path.join("tmp", "{0:s}.out".format(outName))
-
-    @decoratortimer(2)
-    def plotResults(self):
-        """simple plot of the results
-        """
-        import matplotlib.pyplot as plt
-        initialStations = deepcopy(self.stationsDict)
-        finalStations = loadtxt(os.path.join(self.resPath, "bestModel.dat"))
-        for i, station in enumerate(list(initialStations.keys())):
-            x = initialStations[station]["Lon"]
-            y = initialStations[station]["Lat"]
-            yy = finalStations[i]
-            xx = finalStations[i+len(initialStations.keys())]
-            plt.plot(x, y, "r^", ms=5, alpha=.5)
-            plt.plot(xx, yy, "b^", ms=5, alpha=.5)
-            plt.arrow(x, y, xx-x, yy-y, head_width=.05,
-                      head_length=.05, zorder=10)
-        plt.savefig(os.path.join(self.resPath, "BestModel.png"))
 
 
 # run application
 myApp = main()
 # myApp.generateTTTable()
-# myApp.runPSO()
-# myApp.plotResults()
-dfHypocenter = parseHypocenterOutput("events/select.out")
-plotGap(dfHypocenter, "initial")
-hypo71Out = myApp.finalLocation(hypo71=True)
-dfHypo71 = parseHypo71Output(hypo71Out)
-plotGap(dfHypo71, "finHypo71")
+myApp.runPSO()
+# initial plots
+dfHypocenter = parseHypocenterOutput(myApp.parDict["eventsFile"])
+plotResults(dfHypocenter, myApp.stationsDict, myApp.resPath, "initial")
+# final plots
+if myApp.parDict["finalLocator"] == "hypo71":
+    hypo71Out = myApp.doFinalLocation(hypo71=True)
+    dfHypo71 = parseHypo71Output(hypo71Out)
+    plotResults(dfHypo71, myApp.stationsDict, myApp.resPath, "finHypo71")
+elif myApp.parDict["finalLocator"] == "hypoellipse":
+    hypoellipseOut = myApp.doFinalLocation(hypoellipse=True)
+    dfHypoellipse = parseHypoellipseOutput(hypoellipseOut)
+    plotResults(dfHypoellipse, myApp.stationsDict, myApp.resPath, "finHypo71")
