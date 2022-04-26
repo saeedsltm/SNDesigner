@@ -1,13 +1,16 @@
 import os
-import platform
-import sys
 from LatLon import lat_lon as ll
 from shutil import copy
 
-from utils.extra import decoratortimer, mean
-
 # @decoratortimer(2)
 def prepareStationFile(velocityModelDict, stationsDict, defaultsDict):
+    """Prepre STATION0.HYP file
+
+    Args:
+        velocityModelDict (dict): a dictionary contains velocity model information
+        stationsDict (dict): a dictionary contains stations information
+        defaultsDict (_type_): a dictionary contains default values for each location program
+    """
     with open(os.path.join("..", "events", "STATION0.HYP")) as f, open("STATION0.HYP", "w") as g:
         for l in f:
             if l.startswith("RESET"):
@@ -41,9 +44,22 @@ def prepareStationFile(velocityModelDict, stationsDict, defaultsDict):
         g.write("BIN")
 
 def preparePhaseFile():
+    """Prepare phase file
+    """
     copy(os.path.join("..", "events", "select.out"), "select.out")
 
 def runHypocenter(rootName, velocityModelDict, stationsDict, defaultsDict):
+    """Run hypocenter program
+
+    Args:
+        rootName (str): root name of the output file
+        velocityModelDict (dict): a dictionary contains velocity model information
+        stationsDict (dict): a dictionary contains stations information
+        defaultsDict (dict): a dictionary contains default values for each location program
+
+    Returns:
+        str: relocated file output name
+    """
     preparePhaseFile()
     prepareStationFile(velocityModelDict, stationsDict, defaultsDict)
     with open("hypocenter.inp", "w") as f:

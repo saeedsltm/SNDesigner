@@ -458,7 +458,7 @@ class main():
 # run application
 myApp = main()
 # myApp.generateTTTable()
-myApp.runPSO()
+# myApp.runPSO()
 # initial plots
 dfHypocenter = parseHypocenterOutput(myApp.parDict["eventsFile"])
 plotResults(dfHypocenter, myApp.stationsDict, myApp.resPath, "initial")
@@ -471,3 +471,8 @@ elif myApp.parDict["finalLocator"] == "hypoellipse":
     hypoellipseOut = myApp.doFinalLocation(hypoellipse=True)
     dfHypoellipse = parseHypoellipseOutput(hypoellipseOut)
     plotResults(dfHypoellipse, myApp.stationsDict, myApp.resPath, "finHypo71")
+elif myApp.parDict["finalLocator"] == "hypocenter":
+    hypocenterOut = myApp.doFinalLocation(hypocenter=True)
+    dfHypocenter = parseHypocenterOutput(hypocenterOut)
+    plotResults(dfHypocenter, myApp.stationsDict,
+                myApp.resPath, "finHypocenter")

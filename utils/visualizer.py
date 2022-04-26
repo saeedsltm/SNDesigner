@@ -71,7 +71,7 @@ def filterPointsInsideIran(X, Y, poly):
     return ~inside
 
 
-def plotSeismicity(eventsX, eventsY, lonMin, lonMax, latMin, latMax, outName):
+def plotSeismicity(eventsX, eventsY, lonMin, lonMax, latMin, latMax, resultsPath, outName):
     """Plot seismicity map
 
     Args:
@@ -104,7 +104,7 @@ def plotSeismicity(eventsX, eventsY, lonMin, lonMax, latMin, latMax, outName):
     )
     axs[0].plot(eventsX, eventsY, marker="o", ms=5,
                 mew=0.5, mfc="r", mec="k", ls="", zorder=10)
-    fig.save("seismicity_{0:s}.png".format(outName))
+    fig.save(os.path.join(resultsPath, "seismicity_{0:s}.png".format(outName)))
 
 
 def plotStationDislocation(stationsDict, resultsPath, lonMin, lonMax, latMin, latMax):
@@ -130,7 +130,7 @@ def plotStationDislocation(stationsDict, resultsPath, lonMin, lonMax, latMin, la
         lonlines=5, latlines=5,
         facecolor="gray",
         xlabel="Longitude", ylabel="Latitude",
-        suptitle="station dislocation"
+        suptitle="Stations dislocation"
     )
     axs[0].format(
         lonlim=(lonMin-1, lonMax+1),
@@ -144,11 +144,12 @@ def plotStationDislocation(stationsDict, resultsPath, lonMin, lonMax, latMin, la
         y = initialStations[station]["Lat"]
         yy = finalStations[i]
         xx = finalStations[i+len(initialStations.keys())]
-        axs[0].plot(x, y, "r^", ms=5, alpha=.5)
-        axs[0].plot(xx, yy, "b^", ms=5, alpha=.5)
+        axs[0].plot(x, y, "ro", ms=2, alpha=.5)
+        axs[0].plot(xx, yy, marker="^", ms=5, ls="",
+                    mec="k", mfc="w", mew=1, alpha=.5)
         axs[0].arrow(x, y, xx-x, yy-y, head_width=.05,
                      head_length=.05, zorder=10)
-    fig.save("newStationLocations.png")
+    fig.save(os.path.join(resultsPath, "newStationLocations.png"))
 
 
 def plotResults(df, stationsDict, resultsPath, outName):
@@ -177,12 +178,13 @@ def plotResults(df, stationsDict, resultsPath, outName):
     }
     N = 100
     iranPolygon = extractIranBorder()
-    lonMin, latMin, lonMax, latMax = iranPolygon.bounds
+    lonMin, latMin, lonMax, latMax = iranPolygon.bounds  # type: ignore
     xi = np.linspace(lonMin-1, lonMax+1, N)
     yi = np.linspace(latMin-1, latMax+1, N)
     plotStationDislocation(stationsDict, resultsPath,
                            lonMin, lonMax, latMin, latMax)
-    plotSeismicity(eventsX, eventsY, lonMin, lonMax, latMin, latMax, outName)
+    plotSeismicity(eventsX, eventsY, lonMin, lonMax,
+                   latMin, latMax, resultsPath, outName)
     for i, z in enumerate([eventsGap, eventsRMS, eventsERH, eventsERZ]):
         zi = interpolateData(eventsX, eventsY, xi, yi, z, iranPolygon)
         fig, axs = pplt.subplots(ncols=1, nrows=1, figwidth=5)
@@ -212,4 +214,5 @@ def plotResults(df, stationsDict, resultsPath, outName):
         )
         fig.colorbar(m, loc="b", label="{0:s} {1:s}".format(
             k, attributesDict[k][0]))
-        fig.save("{0:s}_{1:s}.png".format(k, outName))
+        fig.save(os.path.join(
+            resultsPath, "{0:s}_{1:s}.png".format(k, outName)))
