@@ -1,2 +1,2 @@
 # SNDesigner
-Designing a seismic network based on earthquake location accuracy
+Designing a seismic network based on earthquake location accuracy.
