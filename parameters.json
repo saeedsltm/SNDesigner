@@ -10,6 +10,7 @@
     "xGridMax": 2001,
     "zGridMax": 81,
     "decimationFactor": 0,
+    "generateTTT": false,
     "stationLatBound": [
         -0.5,
         0.5

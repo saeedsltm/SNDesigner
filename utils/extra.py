@@ -1,7 +1,7 @@
 import time
 
 
-def decoratortimer(decimal):
+def decoratortimer(decimal, logger):
     """get the execution time of a function
 
     Args:
@@ -12,11 +12,13 @@ def decoratortimer(decimal):
             time1 = time.monotonic()
             result = f(*args, **kwargs)
             time2 = time.monotonic()
-            print('{:s} function took {:.{}f} ms'.format(
-                f.__name__, ((time2-time1)*1000.0), decimal))
+            msg = "function '{:s}' took {:.{}f} s".format(
+                f.__name__, ((time2-time1)), decimal)
+            logger.info(msg)
             return result
         return wrap
     return decoratorfunction
+
 
 def mean(a):
     """calculate mean

@@ -1,3 +1,4 @@
+# internal libraries
 import os
 import warnings
 from copy import deepcopy
@@ -8,6 +9,7 @@ from random import choices
 from shutil import copy, rmtree
 from string import ascii_letters as al
 
+# third-parties libraries
 import pykonal
 from fstpso import FuzzyPSO
 from LatLon import lat_lon as ll
@@ -15,6 +17,7 @@ from numpy import array, max, mean
 from obspy import read_events
 from obspy.geodetics.base import gps2dist_azimuth as gps
 
+# user-defined libraries
 from utils.catalog2hypo import (catalog2hypoellipse,
                                 createHypoellipseDefaultFile,
                                 station2hypoellipse, velocity2hypoellipse)
@@ -26,11 +29,16 @@ from utils.parseHypo import (parseHypo71Output, parseHypocenterOutput,
                              parseHypoellipseOutput)
 from utils.synthTime import extractTT, generateTTT
 from utils.visualizer import plotResults
-
+from utils.logger import myLogger
 warnings.filterwarnings("ignore")
 
 
 class main():
+    # setting result directory
+    resPath = os.path.join("results")
+    # set logger
+    report = myLogger("saeed", mode="w")
+
     def __init__(self):
         # reading main parameter file
         with open("parameters.json") as f:
@@ -43,18 +51,18 @@ class main():
             self.parDict["velocityFile"])
         # reading station file
         self.stationsDict = self.readStationFile(self.parDict["stationFile"])
+        # reading catalog
+        self.catalog = self.readEventFile()
+        # check missing stations
+        self.checkMissingStation(self.catalog, self.stationsDict)
         # setting "pykonal" parameters
         self.GridZMax = int(max(self.velocityModelDict["Z"]) + 1.0)
         self.node_intervals = self.parDict["velocityGridIntervals"]
         self.decimationFactor = self.parDict["decimationFactor"]
-        # setting result directory
-        self.resPath = os.path.join("results")
         # setting execution number
         self.run_id = 0
         # set global variable for storing traveltime tabels
         self.travelTimeDict = {}
-        # reading catalog
-        self.catalog = self.readEventFile()
 
     def makeResultDirecory(self):
         """make result directory
@@ -118,7 +126,6 @@ class main():
                     stations[code] = {"Lat": lat, "Lon": lon, "Elv": elv}
         return stations
 
-    # @decoratortimer(2)
     def readEventFile(self):
         """read event file in "obspy" supported formats
 
@@ -128,29 +135,57 @@ class main():
         catalog = read_events(self.parDict["eventsFile"])
         return catalog
 
+    def checkMissingStation(self, catalog, stationsDict):
+        """Check if missed station found between catalog and station file
+
+        Args:
+            catalog (obspy.catalog): an obspy catalog of events
+            stationsDict (dict): a dictionary contains stations information
+
+        Raises:
+            RuntimeError: missed station was found
+        """
+        missingStations = []
+        for event in catalog:
+            for pick in event.picks:
+                station = pick.waveform_id.station_code
+                if station not in stationsDict.keys():
+                    missingStations.append(station)
+        missingStations = sorted(set(missingStations))
+        missingStationsOutputFile = os.path.join(
+            self.resPath, "missingStations.dat")
+        with open(missingStationsOutputFile, "w") as f:
+            for station in missingStations:
+                f.write(station+"\n")
+        if len(missingStations):
+            raise RuntimeError(
+                "{0:d} station(s) missed in station file! ({1:s})".format(len(missingStations), missingStationsOutputFile))
+
+    @decoratortimer(2, report)
     def generateTTTable(self):
         """generate travel time tables and store a bank of files
         """
-        xMaxDist = self.parDict["xGridMax"] * \
-            self.parDict["velocityGridIntervals"][0]
-        zMaxDist = self.parDict["zGridMax"] * \
-            self.parDict["velocityGridIntervals"][2]
-        print("\n+++ Generating travel time tables for X range (0, {xMax:4.0f})km, and Z range (0, {zMax:4.0f})km\n".format(
-            xMax=xMaxDist, zMax=zMaxDist))
-        print("+++ Generating travel time tables for P phase ")
-        generateTTT(
-            self.velocityModelDict, "P",
-            self.parDict["xGridMax"], self.parDict["zGridMax"],
-            self.node_intervals, self.decimationFactor
-        )
-        print("+++ Generating travel time tables for S phase ")
-        generateTTT(
-            self.velocityModelDict, "S",
-            self.parDict["xGridMax"], self.parDict["zGridMax"],
-            self.node_intervals, self.decimationFactor
-        )
+        if self.parDict["generateTTT"]:
+            xMaxDist = self.parDict["numXGrid"] * \
+                self.parDict["velocityGridIntervals"][0]
+            zMaxDist = self.parDict["numZGrid"] * \
+                self.parDict["velocityGridIntervals"][2]
+            print("\n+++ Generating travel time tables for X range (0, {xMax:4.0f})km, and Z range (0, {zMax:4.0f})km\n".format(
+                xMax=xMaxDist, zMax=zMaxDist))
+            print("+++ Generating travel time tables for P phase ")
+            generateTTT(
+                self.velocityModelDict, "P",
+                self.parDict["numXGrid"], self.parDict["numZGrid"],
+                self.node_intervals, self.decimationFactor
+            )
+            print("+++ Generating travel time tables for S phase ")
+            generateTTT(
+                self.velocityModelDict, "S",
+                self.parDict["numXGrid"], self.parDict["numZGrid"],
+                self.node_intervals, self.decimationFactor
+            )
 
-    # @decoratortimer(2)
+    # @decoratortimer(2, report)
     def computeNewDistances(self, eventLat, eventLon, picks, stations):
         """given event coordinates it computes new station's distance
 
@@ -170,7 +205,6 @@ class main():
             0]*1e-3 for (stationLat, stationLon) in zip(stationLats, stationLons)]
         return [array([distance, 1.0, 0.0]) for distance in distances]
 
-    # @decoratortimer(2)
     def writeCatalogFile(self, catalog, id):
         """write obspy catalog in hypoellipse format
 
@@ -183,7 +217,6 @@ class main():
         outFile = os.path.join(catPath, "{id:6s}.pha".format(id=id))
         catalog2hypoellipse(catalog, outFile)
 
-    # @decoratortimer(2)
     def writeStationFile(self, stations, id):
         """write station file in hypoellipse format
 
@@ -204,7 +237,6 @@ class main():
         station2hypoellipse(stationsDict, outFile)
         return stationsDict
 
-    # @decoratortimer(2)
     def writeVelocityFile(self, velocity, id):
         """write velocity model file in hypoellipse format
 
@@ -225,7 +257,7 @@ class main():
         outFile = os.path.join(defPath, "default.cfg")
         createHypoellipseDefaultFile(self.hypoDefaultsDict, outFile)
 
-    # @decoratortimer(2)
+    @decoratortimer(2, report)
     def computeNewArrivals(self, catalog, updatedStations):
         """given an obspy catalog and updated station locations it computes new arrival times
 
@@ -236,7 +268,6 @@ class main():
         Returns:
             obspy.catalog: an updated obspy catalog
         """
-
         for event in catalog:
             preferred_origin = event.preferred_origin()
             originTime = preferred_origin.time
@@ -302,7 +333,7 @@ class main():
         return searchSpace
 
     def writeFSTPSOResults(self, bestStations):
-        """write fst-pso results in a file
+        """write fst-pso results into a file
 
         Args:
             bestStations (list): a list contains best stations coordinates
@@ -340,7 +371,7 @@ class main():
         }
         return misfits[metric]
 
-    # @decoratortimer(2)
+    @decoratortimer(2, report)
     def loss(self, updatedStations):
         """given an updated location of stations it computes misfit based on event location accuracy
 
@@ -392,6 +423,7 @@ class main():
         p.close()
         return results
 
+    @decoratortimer(2, report)
     def runPSO(self):
         """main function of fst-pso
         """
@@ -428,7 +460,18 @@ class main():
                     dump_best_fitness=bestFitnessOutFile)
         self.writeFSTPSOResults(result)
 
+    @decoratortimer(2, report)
     def doFinalLocation(self, hypoellipse=False, hypo71=False, hypocenter=True):
+        """Do the final location using updated network
+
+        Args:
+            hypoellipse (bool, optional): select hypoellipse for locating events. Defaults to False.
+            hypo71 (bool, optional): select hypo71 for locating events. Defaults to False.
+            hypocenter (bool, optional): select hypocenter for locating events. Defaults to True.
+
+        Returns:
+            str: output file name of relocated events
+        """
         outName = "finRun"
         self.writeCatalogFile(self.catalog, outName)
         self.writeVelocityFile(self.velocityModelDict, outName)
@@ -457,8 +500,8 @@ class main():
 
 # run application
 myApp = main()
-# myApp.generateTTTable()
-# myApp.runPSO()
+myApp.generateTTTable()
+myApp.runPSO()
 # initial plots
 dfHypocenter = parseHypocenterOutput(myApp.parDict["eventsFile"])
 plotResults(dfHypocenter, myApp.stationsDict, myApp.resPath, "initial")

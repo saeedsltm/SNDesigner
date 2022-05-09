@@ -92,24 +92,24 @@ def computeTTT(velocity, source_z, z_interval, saveingPath):
 # @decoratortimer(2)
 
 
-def generateTTT(velocityModelDict, velocityType, xGridMax, zGridMax, node_intervals=(1., 1., 1.), decimationFactor=0):
+def generateTTT(velocityModelDict, velocityType, numXGrid, numZGrid, node_intervals=(1., 1., 1.), decimationFactor=0):
     """generate travel time tables
 
     Args:
         velocityModelDict (dict): a dictionary contains P velocity and Vp/Vs ration
         velocityType (str): type of velocity (P or S)
-        xGridMax (int): maximum horizontal distance in km
-        zGridMax (int): maximum vertical distance in km
+        numXGrid (int): maximum horizontal distance in km
+        numZGrid (int): maximum vertical distance in km
         node_intervals (tuple, optional): node intervals in X,Y and Z direction. Defaults to (1., 1., 1.).
         decimationFactor (int, optional): decimation factor. Defaults to 0.
     """
-    nXnYnZ = xGridMax, 1, zGridMax
+    nXnYnZ = numXGrid, 1, numZGrid
     min_coords = (0.0, 0.0, 0.0)
     velocity_P, velocity_S = generateVelocityGrid(
         velocityModelDict, nXnYnZ, node_intervals, min_coords, decimationFactor)
     z_interval = node_intervals[-1]
     Path("ttt").mkdir(parents=True, exist_ok=True)
-    for source_z in tzip(range(zGridMax)):
+    for source_z in tzip(range(numZGrid)):
         source_z = source_z[0]
         saveingPath = os.path.join("ttt", "dep{z:003d}{vt:s}.hdf5".format(
             z=int(source_z), vt=velocityType))
